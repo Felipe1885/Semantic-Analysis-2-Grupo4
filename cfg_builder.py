@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import load_previous  # Disponibiliza os módulos das etapas anteriores.
 
-from ast_nodes import Block, FunctionDecl, IfStmt, Stmt, WhileStmt
-from cfg import BlockId, CFG, Jump
+from ast_nodes import Block, FunctionDecl, IfStmt, Stmt, WhileStmt, ReturnStmt, VarDecl, Assignment, CallStmt, PrintStmt
+from cfg import BlockId, CFG, Jump, Return, ScopeExit
 
 
 class CFGBuilder:
@@ -26,12 +26,44 @@ class CFGBuilder:
         None indica que os caminhos deste bloco não alcançam o próximo comando.
         """
 
-        raise NotImplementedError("implemente CFGBuilder._build_block")
+        # Analisa os comandos do bloco, caso o fluxo feche (ex: return), current vira None
+        for statement in block.statements:
+            if current is None:
+                break
+            current = self._build_statement(statement, current)
+
+        # Caso o fluxo do bloco foi encerrado sem retornar, realiza a saída do escopo, e retorna o ID do bloco atual da CFG.
+        if current is not None:
+            scope = block.metadata.get("scope")
+            if scope is not None:
+                self.cfg.blocks[current].operations.append(ScopeExit(scope))
+
+        return current
+
+        #raise NotImplementedError("implemente CFGBuilder._build_block")
 
     def _build_statement(self, statement: Stmt, current: BlockId) -> BlockId | None:
         """TODO: incorpore um comando ao CFG e devolva sua continuação normal."""
+        if isinstance(statement, Block):
+            return self._build_block(statement, current)
 
-        raise NotImplementedError("implemente CFGBuilder._build_statement")
+        if isinstance(statement, IfStmt):
+            return self._build_if(statement, current)
+
+        if isinstance(statement, WhileStmt):
+            return self._build_while(statement, current)
+
+        if isinstance(statement, ReturnStmt):
+            self.cfg.terminate(current, Return(statement))
+            return None
+
+        if isinstance(statement, (VarDecl, Assignment, CallStmt, PrintStmt)):
+            self.cfg.blocks[current].operations.append(statement)
+            return current
+
+        raise TypeError(f"comando inesperado: {type(statement).__name__}")
+    
+        #raise NotImplementedError("implemente CFGBuilder._build_statement")
 
     def _build_if(self, statement: IfStmt, current: BlockId) -> BlockId | None:
         """TODO: construa o fluxo da condicional e devolva sua continuação."""
