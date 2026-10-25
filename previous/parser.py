@@ -236,19 +236,25 @@ class Parser:
         start = self.expect(TokenKind.IDENTIFIER)
         if self.match(TokenKind.LEFT_PAREN):
             arguments = self.parse_arguments()
-            self.expect(TokenKind.RIGHT_PAREN)
+            rparen = self.expect(TokenKind.RIGHT_PAREN)
             end = self.expect(TokenKind.SEMICOLON)
-            return CallStmt(arguments, span=self._span(start, end))
+            call = CallExpr(
+                name=start.lexeme,
+                arguments=arguments,
+                span=self._span(start, rparen),
+            )
+            return CallStmt(call=call, span=self._span(start, end))
         if self.match(TokenKind.ASSIGN):
             expression = self.parse_expression()
             end = self.expect(TokenKind.SEMICOLON)
+            target = IdentifierExpr(name=start.lexeme, span=self._token_span(start))
             return Assignment(
-                target=start.lexeme,
+                target=target,
                 value=expression,
                 span=self._span(start, end)
             )
-        raise ParserError(self.peek(), {TokenKind.LEFT_PAREN, TokenKind.ASSIGN})
-        
+        raise ParserError(self.peek(), {TokenKind.LEFT_PAREN, TokenKind.ASSIGN})  
+
     def parse_declaration(self) -> Stmt:
         start = self.peek()
         type = self.parse_type()
