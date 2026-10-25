@@ -40,8 +40,6 @@ class CFGBuilder:
 
         return current
 
-        #raise NotImplementedError("implemente CFGBuilder._build_block")
-
     def _build_statement(self, statement: Stmt, current: BlockId) -> BlockId | None:
         """Incorpore um comando ao CFG e devolva sua continuação normal."""
         if isinstance(statement, Block):
@@ -62,8 +60,6 @@ class CFGBuilder:
             return current
 
         raise TypeError(f"comando inesperado: {type(statement).__name__}")
-    
-        #raise NotImplementedError("implemente CFGBuilder._build_statement")
 
     def _build_if(self, statement: IfStmt, current: BlockId) -> BlockId | None:
         """Construa o fluxo da condicional e devolva sua continuação."""
@@ -96,8 +92,6 @@ class CFGBuilder:
             self.cfg.terminate(else_continuation, Jump(merge_block.id))
         return merge_block.id
 
-        #raise NotImplementedError("implemente CFGBuilder._build_if")
-
     def _build_while(self, statement: WhileStmt, current: BlockId) -> BlockId | None:
         """Construa o fluxo do laço e devolva sua continuação."""
         condition_block = self.cfg.new_block()
@@ -120,5 +114,3 @@ class CFGBuilder:
             self.cfg.terminate(body_continuation, Jump(condition_block.id))
 
         return after_block.id
-
-        #raise NotImplementedError("implemente CFGBuilder._build_while")
